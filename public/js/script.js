@@ -46,7 +46,9 @@ const loginFormHandler = async (event) => {
 
 const signupFormHandler = async (event) => {
   event.preventDefault();
-  const userName = capitalizeFirstLetter($("#name-signup").val().trim());
+  const userName = capitalizeFirstLetter(
+    $("#name-signup").val().toLowerCase()
+  ).trim();
   const email = $("#email-signup").val().trim().toLowerCase();
   const password = $("#password-signup").val().trim();
   const password2 = $("#password-signup2").val().trim();
@@ -78,60 +80,6 @@ const signupFormHandler = async (event) => {
   }
 };
 
-
-const delteMovie = async (event) => {
-  event.preventDefault();
-  const targeted = event.target;
-  const id = parseInt(targeted.getAttribute("data-id").trim());
-  console.log(id);
-
-  const response = await fetch(`/api/movie/${id}`, { method: "DELETE" });
-
-  if (response.ok) {
-    // If successful, redirect the browser to the profile page
-    document.location.replace("/profile");
-  } else {
-    errorHandler(response.statusText);
-    return;
-  }
-};
-const likeEvent = async (event) => {
-  event.preventDefault();
-  let targeted = event.target;
-  let movie_id = parseInt(targeted.getAttribute("data-id"));
-  console.log(movie_id);
-
-  const reactionType = targeted.getAttribute("data-reaction");
-  console.log("try to: ", reactionType);
-
-  let like_evt = false;
-  let disLike_evt = false;
-
-  if (reactionType === "like") like_evt = true;
-  if (reactionType === "dislike") disLike_evt = true;
-
-  const response = await fetch(`/api/movie/like/${movie_id}`, {
-    method: "PUT",
-    body: JSON.stringify({ movie_id, like_evt, disLike_evt }),
-    headers: { "Content-Type": "application/json" },
-  });
-
-  if (response.ok) {
-    resMessage = await response.json();
-
-    if (reactionType == "like") {
-      targeted.innerHTML = `<span class="font-weight-bold px-2 text-green-600">${resMessage.likes_count}</span>`;
-      targeted.nextElementSibling.innerHTML = `<span class="font-weight-bold px-2 text-red-600">${resMessage.dislikes_count}</span>`;
-    }
-    if (reactionType == "dislike") {
-      targeted.innerHTML = `<span class="font-weight-bold px-2 text-red-600">${resMessage.dislikes_count}</span>`;
-      targeted.previousElementSibling.innerHTML = `<span class="font-weight-bold px-2 text-green-600">${resMessage.likes_count}</span>`;
-    }
-
-    // errorHandler("Vote saved!");
-  } 
-  
-};
 const logout = async () => {
   const response = await fetch("/api/users/logout", {
     method: "POST",
@@ -147,7 +95,9 @@ const logout = async () => {
 };
 
 const updateUserName = async (event) => {
-  const userName = $("#userChange").val().trim();
+  const userName = capitalizeFirstLetter(
+    $("#userChange").val().lowerCase()
+  ).trim();
   event.preventDefault();
   if (userName) {
     // Send a POST request to the API endpoint
@@ -170,52 +120,38 @@ const updateUserName = async (event) => {
   }
 };
 
-
-
-const updateEmail = async (event) => {
-  const email = $("#emailChange").val().trim();
+const updateUser = async (event) => {
+  const email = $("#user-email").val().toLowerCase().trim();
+  const userName = capitalizeFirstLetter(
+    $("#userName").val().toLowerCase()
+  ).trim();
+  const currentPassword = $("#current-password").val();
+  const newPassword = $("#new-password").val();
   event.preventDefault();
-  if (email) {
+  if (email && userName && currentPassword && newPassword) {
     // Send a POST request to the API endpoint
     const response = await fetch("/api/users/update", {
       method: "PUT",
-      body: JSON.stringify({ email: email }),
+      body: JSON.stringify({
+        email: email,
+        userName: userName,
+        password: currentPassword,
+        newPassword: newPassword,
+      }),
       headers: { "Content-Type": "application/json" },
     });
+    resMessage = await response.json();
 
     if (response.ok) {
       // If successful, redirect the browser to the profile page
       document.location.replace("/profile");
+      errorHandler(resMessage.message);
     } else {
-      errorHandler(response.statusText);
+      errorHandler(resMessage.message);
       return;
     }
   } else {
-    errorHandler("Email can't be empty!");
-    return;
-  }
-};
-
-const updateApiKey = async (event) => {
-  const apiKey = $("#apiChange").val().trim();
-  event.preventDefault();
-  if (apiKey) {
-    // Send a POST request to the API endpoint
-    const response = await fetch("/api/users/update", {
-      method: "PUT",
-      body: JSON.stringify({ apiKey: apiKey }),
-      headers: { "Content-Type": "application/json" },
-    });
-
-    if (response.ok) {
-      // If successful, redirect the browser to the profile page
-      document.location.replace("/profile");
-    } else {
-      errorHandler(response.statusText);
-      return;
-    }
-  } else {
-    errorHandler("Api key can't be empty!");
+    errorHandler("Fields can't be empty!");
     return;
   }
 };
@@ -225,50 +161,6 @@ $(".login-form").on("submit", loginFormHandler);
 $(".signup-form").on("submit", signupFormHandler);
 
 $(".userName-form").on("submit", updateUserName);
-$(".email-form").on("submit", updateEmail);
-$(".apikey-form").on("submit", updateApiKey);
-
-$(".deleteMovie").on("click", delteMovie);
-$(".reaction").on("click", likeEvent);
+$(".update-form").on("submit", updateUser);
 
 $("#logout").on("click", logout);
-
-const commentfn = async (event) => {
-  var options = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  };
-  var today = new Date();
-
-  event.preventDefault();
-  let id = event.target.getAttribute("data-id");
-  let userName = event.target.getAttribute("data-username");
-  log("name", userName, id);
-  let comment = $(`#comment${id}`).val();
-  let containerId = `.comments-container${id}`;
-  $(containerId).prepend(`<div class="card my-2 bg-black-50 mx-4">
-  <div class="card-header"> <i class="fas fa-user-edit"></i></i> <span class=" text-info font-weight-bold fs-5 text-warning">${userName}</span>  <span class=" text-info font-weight-bold float-end">${today.toLocaleDateString(
-    "en-US"
-  )}</span> </div>
-  <div class="card-body">
-    <p class="card-text"><i class="far fa-comment-dots"></i> ${comment}</p>
-    
-  </div>
-</div>`);
-  const postData = { movie_id: id, content: comment };
-  const response = await fetch("/api/comment", {
-    method: "POST",
-    body: JSON.stringify(postData),
-    headers: { "Content-Type": "application/json" },
-  });
-  log(postData);
-  if (!response.ok) {
-    resMessage = await response.json();
-    errorHandler(resMessage.message);
-    return;
-  }
-};
-
-$(".replyBtn").on("click", commentfn);

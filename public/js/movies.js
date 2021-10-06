@@ -163,3 +163,98 @@ const addNewMovie = async () => {
   }
 };
 
+const deleteMovie = async (event) => {
+  event.preventDefault();
+  const targeted = event.target;
+  const id = parseInt(targeted.getAttribute("data-id").trim());
+  console.log(id);
+
+  const response = await fetch(`/api/movie/${id}`, { method: "DELETE" });
+
+  if (response.ok) {
+    // If successful, redirect the browser to the profile page
+    document.location.replace("/profile");
+  } else {
+    errorHandler(response.statusText);
+    return;
+  }
+};
+
+const commentfn = async (event) => {
+  var options = {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  };
+  var today = new Date();
+
+  event.preventDefault();
+  let id = event.target.getAttribute("data-id");
+  let userName = event.target.getAttribute("data-username");
+  log("name", userName, id);
+  let comment = $(`#comment${id}`).val();
+  let containerId = `.comments-container${id}`;
+  $(containerId).prepend(`<div class="card my-2 bg-black-50 mx-4">
+  <div class="card-header"> <i class="fas fa-user-edit"></i></i> <span class=" text-info font-weight-bold fs-5 text-warning">${userName}</span>  <span class=" text-info font-weight-bold float-end">${today.toLocaleDateString(
+    "en-US"
+  )}</span> </div>
+  <div class="card-body">
+    <p class="card-text"><i class="far fa-comment-dots"></i> ${comment}</p>
+    
+  </div>
+</div>`);
+  const postData = { movie_id: id, content: comment };
+  const response = await fetch("/api/comment", {
+    method: "POST",
+    body: JSON.stringify(postData),
+    headers: { "Content-Type": "application/json" },
+  });
+  log(postData);
+  if (!response.ok) {
+    resMessage = await response.json();
+    errorHandler(resMessage.message);
+    return;
+  }
+};
+
+const likeEvent = async (event) => {
+  event.preventDefault();
+  let targeted = event.target;
+  let movie_id = parseInt(targeted.getAttribute("data-id"));
+  console.log(movie_id);
+
+  const reactionType = targeted.getAttribute("data-reaction");
+  console.log("try to: ", reactionType);
+
+  let like_evt = false;
+  let disLike_evt = false;
+
+  if (reactionType === "like") like_evt = true;
+  if (reactionType === "dislike") disLike_evt = true;
+
+  const response = await fetch(`/api/movie/like/${movie_id}`, {
+    method: "PUT",
+    body: JSON.stringify({ movie_id, like_evt, disLike_evt }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (response.ok) {
+    resMessage = await response.json();
+
+    if (reactionType == "like") {
+      targeted.innerHTML = `<span class="font-weight-bold px-2 text-green-600">${resMessage.likes_count}</span>`;
+      targeted.nextElementSibling.innerHTML = `<span class="font-weight-bold px-2 text-red-600">${resMessage.dislikes_count}</span>`;
+    }
+    if (reactionType == "dislike") {
+      targeted.innerHTML = `<span class="font-weight-bold px-2 text-red-600">${resMessage.dislikes_count}</span>`;
+      targeted.previousElementSibling.innerHTML = `<span class="font-weight-bold px-2 text-green-600">${resMessage.likes_count}</span>`;
+    }
+
+    // errorHandler("Vote saved!");
+  }
+};
+
+$(".reaction").on("click", likeEvent);
+$(".replyBtn").on("click", commentfn);
+$(".deleteMovie").on("click", deleteMovie);

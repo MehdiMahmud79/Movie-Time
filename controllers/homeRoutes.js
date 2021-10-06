@@ -24,7 +24,19 @@ router.get("/username", (req, res) => {
     user_id: req.session.user_id,
   });
 });
+router.get("/password", (req, res) => {
+  if (!req.session.logged_in) {
+    res.redirect("/login");
+    return;
+  }
+  res.render("password", {
+    logged_in: req.session.logged_in,
+    userName: req.session.userName,
+    userEmail: req.session.email,
 
+    user_id: req.session.user_id,
+  });
+});
 
 router.get("/register", (req, res) => {
   if (req.session.logged_in) {
